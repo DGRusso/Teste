@@ -13,28 +13,23 @@ df['overweight'] = (df['overweight'] > 25).astype(int)
 
 # 3
 df['cholesterol'] = (df['cholesterol'] > 1).astype(int)
-df['gluc'] = (df['gluc'] > 1).astype(int)
+df['gluc'] = df['gluc'].apply(lambda x: 0 if x == 1 else 1)
 
 # 4
 def draw_cat_plot():
     # 5
     df_cat = pd.melt(df, value_vars=['cholesterol', 'gluc', 'smoke', 'alco', 'active', 'overweight'], id_vars=['cardio'])
-    print(df)
-    print(df_cat)
 
     # 6
-    df_cat = pd.DataFrame(df_cat.value_counts())
-    print(df_cat)
-    #df_cat = pd.melt(df_cat)
-    #print(df_cat)
-    
+    df_cat = df_cat.groupby(['cardio', 'variable', 'value']).size().reset_index()
+    df_cat = df_cat.rename(columns={0: 'total'})   
 
     # 7
-    
-
+    #graph = sns.catplot(data=df_cat, kind='bar', x='variable', y='total', hue='value', col='cardio')
 
     # 8
-    fig = sns.catplot(df_cat, kind='bar')
+    fig = sns.catplot(data=df_cat, kind='bar', x='variable', y='total', hue='value', col='cardio')
+    #fig = graph.fig
 
 
     # 9
@@ -45,36 +40,28 @@ def draw_cat_plot():
 # 10
 def draw_heat_map():
     # 11
-    df_heat = pd.DataFrame(df)
-    print(df_heat)
-    drop1 = df_heat.loc[(df['height'] <= df['height'].quantile(0.025))]
-    drop2 = df_heat.loc[(df['height'] >= df['height'].quantile(0.975))]
-    drop3 = df_heat.loc[(df['weight'] <= df['weight'].quantile(0.025))]
-    drop4 = df_heat.loc[(df['weight'] >= df['weight'].quantile(0.975))]
-    df_heat = df_heat.drop(drop1)
-    df_heat = df_heat.drop(drop2)
-    df_heat = df_heat.drop(drop3)
-    df_heat = df_heat.drop(drop4)
-    print(df_heat)
+    df_heat = df[(df['ap_lo'] <= df['ap_hi']) &
+                 (df['height'] >= df['height'].quantile(0.025)) &
+                 (df['height'] <= df['height'].quantile(0.975)) &
+                 (df['weight'] >= df['weight'].quantile(0.025)) &
+                 (df['weight'] <= df['weight'].quantile(0.975))
+                 ]    
 
     # 12
-    corr = None
+    corr = df_heat.corr()
 
     # 13
-    mask = None
-
-
+    mask = np.triu(np.ones_like(corr, dtype=bool))
 
     # 14
-    fig, ax = None
+    fig, ax = plt.subplots(figsize=(16, 9))
 
     # 15
-
-
+    sns.heatmap(corr, mask=mask, square=True, linewidths=0.5, annot=True, fmt='0.1f')
 
     # 16
     fig.savefig('FreeCodeCamp DataAnalysis/Medical Data Visualizer/heatmap.png')
     return fig
 
-draw_cat_plot()
+#draw_cat_plot()
 #draw_heat_map()
